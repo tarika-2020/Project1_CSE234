@@ -25,12 +25,12 @@ corpus.
 The current `main.py` is only a baseline scaffold. It:
 
 - reads `.rst` files from `sourcedocs/`
-- chunks and retrieves with a simple keyword-overlap baseline
+- chunks with line-aware span tracking
+- retrieves with a simple keyword-overlap baseline
 - emits the required output schema
 
 It does **not** yet provide:
 
-- real line-accurate source spans
 - a production-quality retriever
 - TritonAI generation integration
 - final submission-quality metrics
@@ -101,7 +101,6 @@ python Metrics/run_judge.py --output validation-output.json --validation validat
 
 ## Next Planned Milestones
 
-- add line-aware document ingestion
 - add real retrieval with valid source spans
 - enforce the context budget more carefully
 - integrate TritonAI generation
