@@ -5,15 +5,25 @@ import re
 from collections import Counter
 from pathlib import Path
 
+import tiktoken
+
 
 DOCS_DIR = Path("sourcedocs")
 TOP_K = 5
-CONTEXT_LIMIT = 2000
 MODEL_NAME = "gpt-4o-mini"
 CHUNK_SIZE_WORDS = 220
 CHUNK_OVERLAP_LINES = 3
 BM25_K1 = 1.5
 BM25_B = 0.75
+CONTEXT_TOKEN_BUDGET = 1700
+TOKEN_ENCODING_NAME = "cl100k_base"
+TOKEN_FALLBACK_RATIO = 1.3
+
+
+try:
+    ENCODER = tiktoken.get_encoding(TOKEN_ENCODING_NAME)
+except Exception:
+    ENCODER = None
 
 
 def tokenize(text: str):
@@ -148,21 +158,37 @@ def retrieve(question: str, chunks, stats, top_k: int = TOP_K):
     return [item[1] for item in scored[:top_k]]
 
 
+def count_tokens(text: str):
+    if ENCODER is not None:
+        return len(ENCODER.encode(text))
+    # Fallback to a conservative approximation when the tokenizer assets are unavailable offline.
+    return math.ceil(len(tokenize(text)) * TOKEN_FALLBACK_RATIO)
+
+
+def render_context_chunk(item):
+    return f"[SOURCE: {item['file']} lines {item['start_line']}-{item['end_line']}]\n{item['text']}"
+
+
 def build_context(retrieved):
     context_parts = []
-    total_words = 0
+    used_chunks = []
+    total_tokens = 0
 
     for item in retrieved:
-        words = item["text"].split()
-        if total_words + len(words) > CONTEXT_LIMIT:
+        rendered = render_context_chunk(item)
+        rendered_tokens = count_tokens(rendered)
+        separator_tokens = 2 if context_parts else 0
+
+        if context_parts and total_tokens + separator_tokens + rendered_tokens > CONTEXT_TOKEN_BUDGET:
             break
+        if not context_parts and rendered_tokens > CONTEXT_TOKEN_BUDGET:
+            continue
 
-        context_parts.append(
-            f"[SOURCE: {item['file']} lines {item['start_line']}-{item['end_line']}]\n{item['text']}"
-        )
-        total_words += len(words)
+        context_parts.append(rendered)
+        used_chunks.append(item)
+        total_tokens += separator_tokens + rendered_tokens
 
-    return "\n\n".join(context_parts)
+    return "\n\n".join(context_parts), used_chunks, total_tokens
 
 
 def generate_answer(question: str, context: str):
@@ -180,11 +206,11 @@ def run_pipeline(input_file: str, output_file: str):
     outputs = []
     for item in questions:
         retrieved = retrieve(item["question"], chunks, stats)
-        context = build_context(retrieved)
+        context, used_chunks, _ = build_context(retrieved)
         answer = generate_answer(item["question"], context)
         sources = [
             {"file": r["file"], "lines": [r["start_line"], r["end_line"]]}
-            for r in retrieved
+            for r in used_chunks
         ]
 
         outputs.append(
