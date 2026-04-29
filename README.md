@@ -26,7 +26,7 @@ The current `main.py` is only a baseline scaffold. It:
 
 - reads `.rst` files from `sourcedocs/`
 - chunks with line-aware span tracking
-- retrieves with a simple keyword-overlap baseline
+- retrieves with a deterministic BM25-style lexical baseline
 - emits the required output schema
 
 It does **not** yet provide:
@@ -101,7 +101,6 @@ python Metrics/run_judge.py --output validation-output.json --validation validat
 
 ## Next Planned Milestones
 
-- add real retrieval with valid source spans
 - enforce the context budget more carefully
 - integrate TritonAI generation
 - wire local evaluation and RapidFire experiments

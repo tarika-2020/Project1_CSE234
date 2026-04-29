@@ -1,5 +1,8 @@
 import argparse
 import json
+import math
+import re
+from collections import Counter
 from pathlib import Path
 
 
@@ -9,6 +12,12 @@ CONTEXT_LIMIT = 2000
 MODEL_NAME = "gpt-4o-mini"
 CHUNK_SIZE_WORDS = 220
 CHUNK_OVERLAP_LINES = 3
+BM25_K1 = 1.5
+BM25_B = 0.75
+
+
+def tokenize(text: str):
+    return re.findall(r"[a-z0-9_]+", text.lower())
 
 
 def load_documents(folder: Path):
@@ -65,6 +74,8 @@ def prepare_chunks(documents):
     chunks = []
     for doc in documents:
         for idx, chunk in enumerate(chunk_document_lines(doc["lines"])):
+            tokens = tokenize(chunk["text"])
+            heading = next((line.strip() for line in chunk["text"].splitlines() if line.strip()), "")
             chunks.append(
                 {
                     "file": doc["file"],
@@ -72,21 +83,68 @@ def prepare_chunks(documents):
                     "text": chunk["text"],
                     "start_line": chunk["start_line"],
                     "end_line": chunk["end_line"],
+                    "tokens": tokens,
+                    "term_freqs": Counter(tokens),
+                    "doc_len": len(tokens),
+                    "heading": heading.lower(),
+                    "file_stem": Path(doc["file"]).stem.lower(),
                 }
             )
     return chunks
 
 
-def retrieve(question: str, chunks, top_k: int = TOP_K):
-    # This simple lexical scorer is only a baseline until real retrieval is added.
-    q_words = set(question.lower().split())
+def build_retrieval_stats(chunks):
+    doc_freqs = Counter()
+    total_doc_len = 0
+
+    for chunk in chunks:
+        total_doc_len += chunk["doc_len"]
+        for token in set(chunk["tokens"]):
+            doc_freqs[token] += 1
+
+    avg_doc_len = total_doc_len / len(chunks) if chunks else 0.0
+    return {"doc_freqs": doc_freqs, "avg_doc_len": avg_doc_len, "num_docs": len(chunks)}
+
+
+def score_chunk(question_tokens, chunk, stats):
+    if not chunk["tokens"]:
+        return 0.0
+
+    score = 0.0
+    num_docs = stats["num_docs"]
+    avg_doc_len = stats["avg_doc_len"] or 1.0
+
+    for token in question_tokens:
+        tf = chunk["term_freqs"].get(token, 0)
+        if tf == 0:
+            continue
+
+        df = stats["doc_freqs"].get(token, 0)
+        idf = math.log(1.0 + (num_docs - df + 0.5) / (df + 0.5))
+        denom = tf + BM25_K1 * (1.0 - BM25_B + BM25_B * chunk["doc_len"] / avg_doc_len)
+        score += idf * ((tf * (BM25_K1 + 1.0)) / denom)
+
+    heading_tokens = set(tokenize(chunk["heading"]))
+    question_token_set = set(question_tokens)
+    if heading_tokens:
+        score += 0.35 * len(question_token_set.intersection(heading_tokens))
+    if chunk["file_stem"] in question_token_set:
+        score += 1.0
+
+    return score
+
+
+def retrieve(question: str, chunks, stats, top_k: int = TOP_K):
+    question_tokens = tokenize(question)
     scored = []
     for chunk in chunks:
-        c_words = set(chunk["text"].lower().split())
-        score = len(q_words.intersection(c_words))
+        score = score_chunk(question_tokens, chunk, stats)
         scored.append((score, chunk))
 
-    scored.sort(reverse=True, key=lambda item: item[0])
+    scored.sort(
+        reverse=True,
+        key=lambda item: (item[0], item[1]["file"], -item[1]["start_line"]),
+    )
     return [item[1] for item in scored[:top_k]]
 
 
@@ -114,13 +172,14 @@ def generate_answer(question: str, context: str):
 def run_pipeline(input_file: str, output_file: str):
     docs = load_documents(DOCS_DIR)
     chunks = prepare_chunks(docs)
+    stats = build_retrieval_stats(chunks)
 
     with open(input_file, "r", encoding="utf-8") as handle:
         questions = json.load(handle)
 
     outputs = []
     for item in questions:
-        retrieved = retrieve(item["question"], chunks)
+        retrieved = retrieve(item["question"], chunks, stats)
         context = build_context(retrieved)
         answer = generate_answer(item["question"], context)
         sources = [
