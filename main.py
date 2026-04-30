@@ -1,11 +1,13 @@
 import argparse
 import json
 import math
+import os
 import re
 from collections import Counter
 from pathlib import Path
 
 import tiktoken
+from openai import OpenAI
 
 
 DOCS_DIR = Path("sourcedocs")
@@ -18,6 +20,9 @@ BM25_B = 0.75
 CONTEXT_TOKEN_BUDGET = 1700
 TOKEN_ENCODING_NAME = "cl100k_base"
 TOKEN_FALLBACK_RATIO = 1.3
+DEFAULT_TRITONAI_BASE_URL = "https://tritonai-api.ucsd.edu/v1"
+DEFAULT_API_KEY_PATH = Path.home() / "api-key.txt"
+GENERATION_MAX_TOKENS = 400
 
 
 try:
@@ -191,8 +196,62 @@ def build_context(retrieved):
     return "\n\n".join(context_parts), used_chunks, total_tokens
 
 
+def load_api_key():
+    env_key = os.environ.get("OPENAI_API_KEY")
+    if env_key:
+        return env_key.strip()
+
+    if DEFAULT_API_KEY_PATH.exists():
+        try:
+            return DEFAULT_API_KEY_PATH.read_text(encoding="utf-8").strip()
+        except OSError:
+            return None
+
+    return None
+
+
+def get_generator_config():
+    return {
+        "api_key": load_api_key(),
+        "base_url": os.environ.get("OPENAI_BASE_URL", DEFAULT_TRITONAI_BASE_URL).strip(),
+        "model": os.environ.get("RAG_MODEL", MODEL_NAME).strip(),
+    }
+
+
+def build_generation_messages(question: str, context: str):
+    system_prompt = (
+        "You are answering questions about RapidFire AI documentation. "
+        "Use only the provided retrieved context. "
+        "If the context does not contain enough information, say so briefly instead of guessing."
+    )
+    user_prompt = (
+        f"Retrieved context:\n{context}\n\n"
+        f"Question: {question}\n\n"
+        "Write a concise answer grounded only in the retrieved context."
+    )
+    return [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
+
+
 def generate_answer(question: str, context: str):
-    return "Generated answer based on retrieved context."
+    if not context.strip():
+        return "I could not find enough relevant context to answer this question."
+
+    generator_cfg = get_generator_config()
+    if not generator_cfg["api_key"]:
+        return "Generated answer based on retrieved context."
+
+    client = OpenAI(api_key=generator_cfg["api_key"], base_url=generator_cfg["base_url"])
+    response = client.chat.completions.create(
+        model=generator_cfg["model"],
+        messages=build_generation_messages(question, context),
+        temperature=0.0,
+        max_tokens=GENERATION_MAX_TOKENS,
+    )
+    answer = response.choices[0].message.content or ""
+    return answer.strip() or "I could not produce an answer from the retrieved context."
 
 
 def run_pipeline(input_file: str, output_file: str):

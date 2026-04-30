@@ -33,7 +33,6 @@ The current `main.py` is only a baseline scaffold. It:
 It does **not** yet provide:
 
 - a production-quality retriever
-- TritonAI generation integration
 - final submission-quality metrics
 
 ## Environment and Configuration
@@ -48,13 +47,18 @@ Expected environment variables for TritonAI or OpenAI-compatible generation and
 judge workflows:
 
 - `OPENAI_API_KEY`: required for TritonAI or OpenAI calls
-- `OPENAI_BASE_URL`: optional for the generator client
+- `OPENAI_BASE_URL`: optional for the generator client; defaults to TritonAI
 - `JUDGE_BASE_URL`: optional for the released judge script
-- `JUDGE_MODEL`: optional override for the released judge script
+- `JUDGE_MODEL`: optional override for the released judge script; default to
+  `claude-sonnet-4-6-aws`, with `api-gpt-oss-120b` as a fallback if needed
+- `RAG_MODEL`: optional override for the generator model in `main.py`
 
 For the course TritonAI gateway, the base URL is expected to be:
 
 `https://tritonai-api.ucsd.edu/v1`
+
+On Datahub, `main.py` also supports the course convention of reading the API key
+from `~/api-key.txt` if `OPENAI_API_KEY` is not set.
 
 ## Running the Pipeline
 
@@ -63,6 +67,11 @@ Example command:
 ```bash
 python main.py --input validation-set-golden-qa-pairs.json --output validation-output.json
 ```
+
+This command can be run from an SSH session on Datahub. SSH itself is not part
+of the Python pipeline, but the code is now configured to work cleanly in that
+environment by defaulting to the TritonAI endpoint and by reading `~/api-key.txt`
+when available.
 
 The input file must be a JSON list of objects with:
 
@@ -87,7 +96,7 @@ python Metrics/evaluate_retrieval.py --output validation-output.json --validatio
 Judge evaluation:
 
 ```bash
-python Metrics/run_judge.py --output validation-output.json --validation validation-set-golden-qa-pairs.json --base-url https://tritonai-api.ucsd.edu/v1 --model <chat-model>
+python Metrics/run_judge.py --output validation-output.json --validation validation-set-golden-qa-pairs.json --base-url https://tritonai-api.ucsd.edu/v1 --model claude-sonnet-4-6-aws
 ```
 
 ## Submission Checklist
@@ -102,5 +111,4 @@ python Metrics/run_judge.py --output validation-output.json --validation validat
 
 ## Next Planned Milestones
 
-- integrate TritonAI generation
 - wire local evaluation and RapidFire experiments
