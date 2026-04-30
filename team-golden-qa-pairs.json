@@ -1,0 +1,317 @@
+[
+  {
+    "question_id": 2001,
+    "question": "How does RFLangChainRagSpec differ when you run it with preprocessing versus without preprocessing?",
+    "reference_answer": "With preprocessing, RFLangChainRagSpec creates both Document Preprocessing workers and Query Processing workers. You provide a document loader, optional text splitter, embedding config, and optional vector store config so documents can be chunked, embedded, and stored in a vector store. Without preprocessing, it creates only Query Processing workers over an already available vector store; in that case you provide query-time knobs such as embedding_cfg, retriever or vector_store_cfg, search_cfg, and reranker_cfg.",
+    "source_evidence": [
+      {
+        "file": "ragspecs.rst",
+        "lines": [
+          33,
+          37
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2002,
+    "question": "What does enable_gpu_search change for FAISS-based retrieval in RFLangChainRagSpec?",
+    "reference_answer": "For FAISS, enable_gpu_search switches retrieval from the default CPU-based approximate HNSW index to a GPU-accelerated exact IndexFlatL2 search that uses matrix multiplication. GPU mode requires the faiss-gpu package and a CUDA-compatible GPU. FAISS itself still has no extra vector store arguments and only supports Create mode because it is in-memory and not persistent.",
+    "source_evidence": [
+      {
+        "file": "ragspecs.rst",
+        "lines": [
+          69,
+          69
+        ]
+      },
+      {
+        "file": "ragspecs.rst",
+        "lines": [
+          121,
+          122
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2003,
+    "question": "What does the default document_template include, and how can a custom template change the serialized context?",
+    "reference_answer": "The default document_template joins all metadata key-value pairs with semicolons and then appends the document page content on the next line. A custom template can override both which metadata fields are included and how the final string is formatted, such as including only a source field and a custom content label. Multiple retrieved documents are still separated by double newlines when serialized.",
+    "source_evidence": [
+      {
+        "file": "ragspecs.rst",
+        "lines": [
+          124,
+          139
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2004,
+    "question": "When is Pinecone index_namespace required in RFLangChainRagSpec, and when is it not applicable?",
+    "reference_answer": "For Pinecone, index_namespace is required in Read or Update mode and must point to a pre-existing index and namespace. It is not applicable in Create mode because RapidFire AI creates an index name automatically with an rf- prefix and a worker-specific SHA hash, while using the default empty namespace. Create mode instead requires a deployment spec and can optionally take settings like metric or vector type.",
+    "source_evidence": [
+      {
+        "file": "ragspecs.rst",
+        "lines": [
+          73,
+          88
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2005,
+    "question": "What does the PGVector configuration require, and which option can delete an existing collection before writing?",
+    "reference_answer": "PGVector requires a connection string or engine in all modes. In Read or Update mode it also requires a pre-existing collection_name, while in Create mode RapidFire AI generates a random SHA-based collection name. The pre_delete_collection flag is the option that can delete an existing collection before writing, and it applies only to Update mode.",
+    "source_evidence": [
+      {
+        "file": "ragspecs.rst",
+        "lines": [
+          90,
+          97
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2006,
+    "question": "If you run RapidFire AI on a remote machine over SSH, which ports need forwarding for the RAG tutorial setup?",
+    "reference_answer": "The walkthrough recommends forwarding ports 8850, 8851, and 8853 from the remote machine to the client. These are the ports used by the RapidFire services when accessing the dashboard and related components from a remote host through SSH or an IDE's port-forwarding feature.",
+    "source_evidence": [
+      {
+        "file": "walkthroughrag.rst",
+        "lines": [
+          107,
+          120
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2007,
+    "question": "When is starting the RapidFire AI server optional for run_evals in RAG/context-engineering experiments?",
+    "reference_answer": "Starting the server is optional for run_evals when you only need the in-notebook results table and notebook-displayed IC Ops panel. It is only necessary if you also want to view results on the ML metrics dashboard. The walkthrough explicitly says this is specific to RAG/context-engineering evals with run_evals.",
+    "source_evidence": [
+      {
+        "file": "walkthroughrag.rst",
+        "lines": [
+          78,
+          103
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2008,
+    "question": "What are the two main ways to get started with RapidFire AI for RAG/context engineering, and what tradeoff does each one make?",
+    "reference_answer": "The two entry paths are Google Colab and Full Installation. Google Colab requires almost no local setup and is quick to start, but it is limited by a free T4 environment and therefore only practical for smaller models and datasets. Full Installation takes more setup but supports any environment, larger workloads, and the use of your own OpenAI keys.",
+    "source_evidence": [
+      {
+        "file": "walkthroughrag.rst",
+        "lines": [
+          4,
+          8
+        ]
+      },
+      {
+        "file": "walkthroughrag.rst",
+        "lines": [
+          16,
+          21
+        ]
+      },
+      {
+        "file": "walkthroughrag.rst",
+        "lines": [
+          24,
+          30
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2009,
+    "question": "What happens if you reuse an old experiment name, and why does the documentation recommend explicitly ending the previous experiment first?",
+    "reference_answer": "If you reuse an experiment name, RapidFire AI automatically appends a suffix similar to how filesystems avoid name collisions. The documentation recommends explicitly ending the previous experiment before starting a new one so you remain aware of which code and configuration changes belong to which experiment instead of carrying state forward unintentionally.",
+    "source_evidence": [
+      {
+        "file": "experiment.rst",
+        "lines": [
+          9,
+          10
+        ]
+      },
+      {
+        "file": "experiment.rst",
+        "lines": [
+          56,
+          58
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2010,
+    "question": "Why does the Experiment documentation tell you to wait up to two minutes after interrupting run_fit or run_evals?",
+    "reference_answer": "The note explains that only one Experiment function can run at a time, and if you interrupt a long-running function such as run_fit or run_evals, the Python threads may need up to about two minutes to clean up. Waiting avoids starting a new operation while the previous threads are still shutting down.",
+    "source_evidence": [
+      {
+        "file": "experiment.rst",
+        "lines": [
+          16,
+          19
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2011,
+    "question": "What kinds of objects can you pass as param_config to run_fit?",
+    "reference_answer": "The param_config argument is intentionally flexible. It can be a single config dictionary, a list of config dictionaries, a config-group generator output such as RFGridSearch or RFRandomSearch, or even a mixed list containing individual configs and config-group generator outputs together.",
+    "source_evidence": [
+      {
+        "file": "experiment.rst",
+        "lines": [
+          116,
+          120
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2012,
+    "question": "Why is num_chunks a critical run_fit argument, and what value does the documentation recommend?",
+    "reference_answer": "num_chunks is critical because it controls the balance between more cross-config concurrency and the extra swapping overhead incurred by that concurrency. The documentation recommends using at least 4 chunks, which lets you see results for all runs on one quarter of the data at a time.",
+    "source_evidence": [
+      {
+        "file": "experiment.rst",
+        "lines": [
+          127,
+          129
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2013,
+    "question": "What are the four main tabs on the dashboard, and what do the two log tabs record?",
+    "reference_answer": "The dashboard's main Experiments page has four tabs: Table, Chart, Experiment Log, and Interactive Control (IC) Log. The Experiment Log records all operations run through the RapidFire API, while the Interactive Control Log specifically records IC operations triggered through the IC Ops panels.",
+    "source_evidence": [
+      {
+        "file": "dashboard.rst",
+        "lines": [
+          37,
+          45
+        ]
+      },
+      {
+        "file": "dashboard.rst",
+        "lines": [
+          89,
+          105
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2014,
+    "question": "Why might runs not line up on the dashboard charts, and what does the documentation say you should do to see the newest metrics?",
+    "reference_answer": "Runs may not line up because the Step axis is absolute, so runs with different batch sizes or different epoch counts naturally accumulate different numbers of steps. The documentation also says you should refresh the browser page so RapidFire AI's metrics reader pulls the latest entries from the metrics files.",
+    "source_evidence": [
+      {
+        "file": "dashboard.rst",
+        "lines": [
+          61,
+          71
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2015,
+    "question": "How does the documentation suggest fixing the GenerationMixin ImportError that can appear between experiments?",
+    "reference_answer": "The recommended recovery sequence is to inspect running Python processes with ps - ef | grep python, kill any stray multiprocessing.spawn or defunct processes with kill -9 [PID], wait about two minutes regardless of whether any were found, and then restart the kernel before proceeding with the next experiment. The underlying cause is leftover Python processes from the previous experiment not ending cleanly.",
+    "source_evidence": [
+      {
+        "file": "issues.rst",
+        "lines": [
+          22,
+          39
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2016,
+    "question": "What storage cleanup advice does RapidFire AI give if you run out of disk space during experimentation?",
+    "reference_answer": "It recommends clearing the Hugging Face .cache directory in your home folder because imported base models from one experiment are not needed for another. If more space is needed, you can also delete or move experiment artifact files elsewhere. The documentation also notes that LoRA checkpoints store only trained adapters rather than the full base models, which helps keep checkpoint size down.",
+    "source_evidence": [
+      {
+        "file": "issues.rst",
+        "lines": [
+          42,
+          53
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2017,
+    "question": "What additional tutorial variations does RapidFire AI provide for the SFT use case beyond the base SFT example?",
+    "reference_answer": "Beyond the base SFT example, the tutorials mention a lite version built around a fast small language model and multiple FSDP-based versions that automatically partition larger models across GPUs. Those are presented as extra SFT variations alongside the broader fine-tuning and post-training tutorial set.",
+    "source_evidence": [
+      {
+        "file": "tutorials.rst",
+        "lines": [
+          27,
+          34
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2018,
+    "question": "What live three-way communication does RapidFire AI establish, and what hardware environments can it run on?",
+    "reference_answer": "RapidFire AI establishes live communication between the IDE where the experiment is launched, a metrics display and control dashboard, and a multi-core or multi-GPU execution backend. The overview says it can run on a CPU-only machine, a single-GPU machine, or a multi-GPU machine, and it specifically notes that GPUs are not required for RAG/context-engineering workflows that use only closed model APIs.",
+    "source_evidence": [
+      {
+        "file": "overview.rst",
+        "lines": [
+          13,
+          20
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2019,
+    "question": "Why does RapidFire AI argue that online aggregation matters for expensive RAG or context-engineering evaluations?",
+    "reference_answer": "Traditional batch evals make you wait until a whole dataset finishes before you see results, which can waste token spend on closed-model APIs or GPU resources on self-hosted models if a config is poor. RapidFire AI addresses this by combining adaptive shard-based execution with online aggregation so you get running metric estimates and confidence intervals in real time, allowing early stopping of weak configs and more informed exploration of better ones.",
+    "source_evidence": [
+      {
+        "file": "onlineagg.rst",
+        "lines": [
+          4,
+          20
+        ]
+      }
+    ]
+  },
+  {
+    "question_id": 2020,
+    "question": "What two metric types does RapidFire AI support for online aggregation, and what happens if you do not label a metric with a type?",
+    "reference_answer": "RapidFire AI distinguishes between distributive metrics, which are purely additive over data points, and algebraic metrics, which are averages or proportions that can be decomposed into distributive components. When you define metrics for evals, you are supposed to specify their type and value range. If a metric is left without a type, RapidFire AI displays it as-is rather than producing projected estimates or confidence intervals for it.",
+    "source_evidence": [
+      {
+        "file": "onlineagg.rst",
+        "lines": [
+          58,
+          75
+        ]
+      }
+    ]
+  }
+]
