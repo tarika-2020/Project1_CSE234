@@ -52,6 +52,11 @@ judge workflows:
 - `JUDGE_MODEL`: optional override for the released judge script; default to
   `claude-sonnet-4-6-aws`, with `api-gpt-oss-120b` as a fallback if needed
 - `RAG_MODEL`: optional override for the generator model in `main.py`
+- `RAG_FINAL_TOP_K`: optional number of chunks kept after ranking/reranking
+- `RAG_CHUNK_SIZE_WORDS`: optional chunk size override
+- `RAG_CHUNK_OVERLAP_LINES`: optional chunk overlap override
+- `RAG_HEADING_BOOST`: optional BM25 heading-match boost override
+- `RAG_FILENAME_BOOST`: optional filename-match boost override
 
 For the course TritonAI gateway, the base URL is expected to be:
 
@@ -72,6 +77,15 @@ This command can be run from an SSH session on Datahub. SSH itself is not part
 of the Python pipeline, but the code is now configured to work cleanly in that
 environment by defaulting to the TritonAI endpoint and by reading `~/api-key.txt`
 when available.
+
+The current default retrieval baseline is the tuned Variant 1 setup:
+
+```powershell
+$env:RAG_CHUNK_SIZE_WORDS="160"
+$env:RAG_CHUNK_OVERLAP_LINES="2"
+$env:RAG_FINAL_TOP_K="4"
+$env:RAG_HEADING_BOOST="0.25"
+```
 
 The input file must be a JSON list of objects with:
 

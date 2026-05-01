@@ -11,10 +11,9 @@ from openai import OpenAI
 
 
 DOCS_DIR = Path("sourcedocs")
-TOP_K = 5
 MODEL_NAME = "gpt-4o-mini"
-CHUNK_SIZE_WORDS = 220
-CHUNK_OVERLAP_LINES = 3
+CHUNK_SIZE_WORDS = int(os.environ.get("RAG_CHUNK_SIZE_WORDS", "160"))
+CHUNK_OVERLAP_LINES = int(os.environ.get("RAG_CHUNK_OVERLAP_LINES", "2"))
 BM25_K1 = 1.5
 BM25_B = 0.75
 CONTEXT_TOKEN_BUDGET = 1700
@@ -23,6 +22,9 @@ TOKEN_FALLBACK_RATIO = 1.3
 DEFAULT_TRITONAI_BASE_URL = "https://tritonai-api.ucsd.edu/v1"
 DEFAULT_API_KEY_PATH = Path.home() / "api-key.txt"
 GENERATION_MAX_TOKENS = 400
+HEADING_BOOST = float(os.environ.get("RAG_HEADING_BOOST", "0.25"))
+FILENAME_BOOST = float(os.environ.get("RAG_FILENAME_BOOST", "1.0"))
+FINAL_TOP_K = int(os.environ.get("RAG_FINAL_TOP_K", "4"))
 
 
 try:
@@ -142,14 +144,14 @@ def score_chunk(question_tokens, chunk, stats):
     heading_tokens = set(tokenize(chunk["heading"]))
     question_token_set = set(question_tokens)
     if heading_tokens:
-        score += 0.35 * len(question_token_set.intersection(heading_tokens))
+        score += HEADING_BOOST * len(question_token_set.intersection(heading_tokens))
     if chunk["file_stem"] in question_token_set:
-        score += 1.0
+        score += FILENAME_BOOST
 
     return score
 
 
-def retrieve(question: str, chunks, stats, top_k: int = TOP_K):
+def retrieve(question: str, chunks, stats, top_k: int):
     question_tokens = tokenize(question)
     scored = []
     for chunk in chunks:
@@ -264,7 +266,7 @@ def run_pipeline(input_file: str, output_file: str):
 
     outputs = []
     for item in questions:
-        retrieved = retrieve(item["question"], chunks, stats)
+        retrieved = retrieve(item["question"], chunks, stats, top_k=FINAL_TOP_K)
         context, used_chunks, _ = build_context(retrieved)
         answer = generate_answer(item["question"], context)
         sources = [
