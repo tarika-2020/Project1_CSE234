@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -25,6 +26,17 @@ GENERATION_MAX_TOKENS = 400
 HEADING_BOOST = float(os.environ.get("RAG_HEADING_BOOST", "0.25"))
 FILENAME_BOOST = float(os.environ.get("RAG_FILENAME_BOOST", "1.0"))
 FINAL_TOP_K = int(os.environ.get("RAG_FINAL_TOP_K", "4"))
+EMBEDDING_MODEL = os.environ.get("RAG_EMBEDDING_MODEL", "api-tgpt-embeddings").strip()
+EMBEDDING_WEIGHT = float(os.environ.get("RAG_EMBEDDING_WEIGHT", "0.4"))
+LEXICAL_CANDIDATES = int(os.environ.get("RAG_LEXICAL_CANDIDATES", "10"))
+EMBEDDING_CANDIDATES = int(os.environ.get("RAG_EMBEDDING_CANDIDATES", "10"))
+RERANK_CANDIDATES = int(os.environ.get("RAG_RERANK_CANDIDATES", "8"))
+RERANK_MODEL = os.environ.get("RAG_RERANK_MODEL", "api-mistral-small-3.2-2506").strip()
+RERANK_MAX_CHARS = int(os.environ.get("RAG_RERANK_MAX_CHARS", "1000"))
+EMBEDDING_CACHE_PATH = Path(os.environ.get("RAG_EMBEDDING_CACHE_PATH", ".embedding_cache_api_tgpt.json"))
+
+EMBEDDING_CACHE = None
+EMBEDDING_DIRTY = False
 
 
 try:
@@ -35,6 +47,90 @@ except Exception:
 
 def tokenize(text: str):
     return re.findall(r"[a-z0-9_]+", text.lower())
+
+
+def load_embedding_cache():
+    global EMBEDDING_CACHE
+    if EMBEDDING_CACHE is not None:
+        return EMBEDDING_CACHE
+    if EMBEDDING_CACHE_PATH.exists():
+        try:
+            EMBEDDING_CACHE = json.loads(EMBEDDING_CACHE_PATH.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            EMBEDDING_CACHE = {}
+    else:
+        EMBEDDING_CACHE = {}
+    return EMBEDDING_CACHE
+
+
+def save_embedding_cache():
+    global EMBEDDING_DIRTY
+    if not EMBEDDING_DIRTY or EMBEDDING_CACHE is None:
+        return
+    EMBEDDING_CACHE_PATH.write_text(json.dumps(EMBEDDING_CACHE), encoding="utf-8")
+    EMBEDDING_DIRTY = False
+
+
+def cache_key_for_text(model: str, text: str):
+    digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    return f"{model}:{digest}"
+
+
+def get_api_client():
+    cfg = get_generator_config()
+    if not cfg["api_key"]:
+        return None
+    return OpenAI(api_key=cfg["api_key"], base_url=cfg["base_url"])
+
+
+def batch_get_embeddings(texts, model: str):
+    if not texts:
+        return []
+    cache = load_embedding_cache()
+    uncached = []
+    uncached_positions = []
+    outputs = [None] * len(texts)
+
+    for idx, text in enumerate(texts):
+        key = cache_key_for_text(model, text)
+        if key in cache:
+            outputs[idx] = cache[key]
+        else:
+            uncached.append(text)
+            uncached_positions.append((idx, key))
+
+    if uncached:
+        client = get_api_client()
+        if client is None:
+            return []
+        response = client.embeddings.create(
+            input=uncached,
+            model=model,
+            encoding_format="float",
+        )
+        global EMBEDDING_DIRTY
+        for (idx, key), item in zip(uncached_positions, response.data):
+            cache[key] = item.embedding
+            outputs[idx] = item.embedding
+        EMBEDDING_DIRTY = True
+        save_embedding_cache()
+
+    return outputs
+
+
+def cosine_similarity(vec_a, vec_b):
+    if not vec_a or not vec_b:
+        return 0.0
+    dot = sum(a * b for a, b in zip(vec_a, vec_b))
+    norm_a = math.sqrt(sum(a * a for a in vec_a))
+    norm_b = math.sqrt(sum(b * b for b in vec_b))
+    if norm_a == 0.0 or norm_b == 0.0:
+        return 0.0
+    return dot / (norm_a * norm_b)
+
+
+def reciprocal_rank_fusion(ranks, k: int = 60):
+    return sum(1.0 / (k + rank) for rank in ranks if rank is not None)
 
 
 def load_documents(folder: Path):
@@ -105,9 +201,20 @@ def prepare_chunks(documents):
                     "doc_len": len(tokens),
                     "heading": heading.lower(),
                     "file_stem": Path(doc["file"]).stem.lower(),
+                    "embedding_text": f"{doc['file']}\n{heading}\n{chunk['text']}",
                 }
             )
     return chunks
+
+
+def attach_embeddings(chunks):
+    texts = [chunk["embedding_text"] for chunk in chunks]
+    embeddings = batch_get_embeddings(texts, EMBEDDING_MODEL)
+    if not embeddings or len(embeddings) != len(chunks):
+        return False
+    for chunk, embedding in zip(chunks, embeddings):
+        chunk["embedding"] = embedding
+    return True
 
 
 def build_retrieval_stats(chunks):
@@ -151,24 +258,128 @@ def score_chunk(question_tokens, chunk, stats):
     return score
 
 
+def rerank_with_llm(question: str, candidates):
+    client = get_api_client()
+    if client is None or not candidates:
+        return None
+
+    candidate_blocks = []
+    for idx, chunk in enumerate(candidates, start=1):
+        snippet = chunk["text"][:RERANK_MAX_CHARS]
+        candidate_blocks.append(
+            f"[{idx}] {chunk['file']} lines {chunk['start_line']}-{chunk['end_line']}\n{snippet}"
+        )
+
+    prompt = (
+        "Rank the candidate documentation chunks by how useful they are for answering the question.\n"
+        "Prefer chunks that directly answer the question, define the requested concept, or contain exact parameter names and defaults.\n"
+        "Return JSON only in the form {\"ranked_ids\": [best_id, ...]} using candidate ids.\n\n"
+        f"Question:\n{question}\n\nCandidates:\n" + "\n\n".join(candidate_blocks)
+    )
+
+    response = client.chat.completions.create(
+        model=RERANK_MODEL,
+        messages=[
+            {"role": "system", "content": "You rank retrieval candidates for a documentation QA system."},
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.0,
+        max_tokens=200,
+    )
+    content = response.choices[0].message.content or ""
+    content = re.sub(r"^```(?:json)?\s*|\s*```$", "", content.strip(), flags=re.MULTILINE).strip()
+    try:
+        parsed = json.loads(content)
+        ranked_ids = parsed.get("ranked_ids", [])
+    except json.JSONDecodeError:
+        return None
+
+    chosen = []
+    seen = set()
+    for item in ranked_ids:
+        try:
+            idx = int(item) - 1
+        except (TypeError, ValueError):
+            continue
+        if 0 <= idx < len(candidates) and idx not in seen:
+            seen.add(idx)
+            chosen.append(candidates[idx])
+
+    return chosen if chosen else None
+
+
 def retrieve(question: str, chunks, stats, top_k: int):
     question_tokens = tokenize(question)
-    scored = []
+    lexical_scored = []
     for chunk in chunks:
         score = score_chunk(question_tokens, chunk, stats)
-        scored.append((score, chunk))
+        lexical_scored.append((score, chunk))
 
-    scored.sort(
+    lexical_scored.sort(
         reverse=True,
         key=lambda item: (item[0], item[1]["file"], -item[1]["start_line"]),
     )
-    return [item[1] for item in scored[:top_k]]
+
+    if not chunks or "embedding" not in chunks[0]:
+        return [item[1] for item in lexical_scored[:top_k]]
+
+    query_embeddings = batch_get_embeddings([question], EMBEDDING_MODEL)
+    if not query_embeddings:
+        return [item[1] for item in lexical_scored[:top_k]]
+    query_embedding = query_embeddings[0]
+
+    embedding_scored = []
+    for chunk in chunks:
+        similarity = cosine_similarity(query_embedding, chunk.get("embedding"))
+        embedding_scored.append((similarity, chunk))
+
+    embedding_scored.sort(
+        reverse=True,
+        key=lambda item: (item[0], item[1]["file"], -item[1]["start_line"]),
+    )
+
+    candidate_pool = {}
+
+    for rank, (score, chunk) in enumerate(lexical_scored[:LEXICAL_CANDIDATES], start=1):
+        key = (chunk["file"], chunk["start_line"], chunk["end_line"])
+        entry = candidate_pool.setdefault(
+            key,
+            {"chunk": chunk, "lex_rank": None, "emb_rank": None, "lex_score": 0.0, "emb_score": 0.0},
+        )
+        entry["lex_rank"] = rank
+        entry["lex_score"] = score
+
+    for rank, (score, chunk) in enumerate(embedding_scored[:EMBEDDING_CANDIDATES], start=1):
+        key = (chunk["file"], chunk["start_line"], chunk["end_line"])
+        entry = candidate_pool.setdefault(
+            key,
+            {"chunk": chunk, "lex_rank": None, "emb_rank": None, "lex_score": 0.0, "emb_score": 0.0},
+        )
+        entry["emb_rank"] = rank
+        entry["emb_score"] = score
+
+    merged = []
+    for entry in candidate_pool.values():
+        fused = reciprocal_rank_fusion([entry["lex_rank"], entry["emb_rank"]])
+        fused += 0.02 * entry["lex_score"] + EMBEDDING_WEIGHT * entry["emb_score"]
+        merged.append((fused, entry["chunk"]))
+
+    merged.sort(
+        reverse=True,
+        key=lambda item: (item[0], item[1]["file"], -item[1]["start_line"]),
+    )
+
+    top_candidates = [item[1] for item in merged[:RERANK_CANDIDATES]]
+    reranked = rerank_with_llm(question, top_candidates)
+    if reranked:
+        return reranked[:top_k]
+
+    return top_candidates[:top_k]
 
 
 def count_tokens(text: str):
     if ENCODER is not None:
         return len(ENCODER.encode(text))
-    # Fallback to a conservative approximation when the tokenizer assets are unavailable offline.
     return math.ceil(len(tokenize(text)) * TOKEN_FALLBACK_RATIO)
 
 
@@ -259,6 +470,7 @@ def generate_answer(question: str, context: str):
 def run_pipeline(input_file: str, output_file: str):
     docs = load_documents(DOCS_DIR)
     chunks = prepare_chunks(docs)
+    attach_embeddings(chunks)
     stats = build_retrieval_stats(chunks)
 
     with open(input_file, "r", encoding="utf-8") as handle:
