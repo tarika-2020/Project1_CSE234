@@ -28,7 +28,9 @@ The current `main.py` is our tuned submission pipeline. It:
 - builds line-tracked chunks for evidence extraction
 - runs hybrid retrieval using lexical BM25-style scoring plus Triton embeddings
 - reranks the merged retrieval candidates with a chat model
-- serializes the final context under a token budget
+- enforces the full per-query 2,000-token prompt budget from the project
+  statement, including prompt overhead
+- filters redundant chunks before context packing
 - generates answers through the TritonAI OpenAI-compatible API
 - emits the required output schema with `question_id`, `answer`,
   `retrieved_context`, and `sources`
@@ -63,6 +65,13 @@ judge workflows:
 - `RAG_RERANK_CANDIDATES`: optional reranking pool size
 - `RAG_EMBEDDING_CACHE_PATH`: optional local cache path for chunk/query
   embeddings
+- `RAG_GENERATION_MAX_TOKENS`: optional generation token cap
+- `RAG_TOTAL_LLM_PROMPT_BUDGET`: optional total prompt budget; current default
+  is `2000`
+- `RAG_PROMPT_BUDGET_SAFETY_MARGIN`: optional reserved prompt budget margin
+- `RAG_MAX_SAME_FILE_CHUNKS`: optional maximum selected chunks per file
+- `RAG_MAX_OVERLAP_LINES`: optional overlap threshold used for context
+  deduplication
 
 For the course TritonAI gateway, the base URL is expected to be:
 
@@ -121,6 +130,11 @@ $env:RAG_RERANK_MODEL="api-mistral-small-3.2-2506"
 $env:RAG_LEXICAL_CANDIDATES="10"
 $env:RAG_EMBEDDING_CANDIDATES="10"
 $env:RAG_RERANK_CANDIDATES="8"
+$env:RAG_GENERATION_MAX_TOKENS="550"
+$env:RAG_TOTAL_LLM_PROMPT_BUDGET="2000"
+$env:RAG_PROMPT_BUDGET_SAFETY_MARGIN="64"
+$env:RAG_MAX_SAME_FILE_CHUNKS="2"
+$env:RAG_MAX_OVERLAP_LINES="6"
 ```
 
 ## Running the Released Evaluators
@@ -169,8 +183,7 @@ Generation with `api-mistral-small-3.2-2506`:
 Average:
 `0.7566`
 
-4. Final tuned hybrid retrieval + embedding + reranking pipeline, now copied
-into `main.py`.
+4. Tuned hybrid retrieval + embedding + reranking pipeline.
 Retrieval:
 `F1@5=0.5749`, `P@5=0.4296`, `R@5=0.9611`, `Retrieval Score=0.6552`
 Generation with `api-mistral-small-3.2-2506`:
@@ -178,6 +191,17 @@ Generation with `api-mistral-small-3.2-2506`:
 `Partial Generation Score=0.9452`
 Average:
 `0.8002`
+
+5. Current final pipeline in `main.py` with true 2,000-token total prompt
+budget enforcement, stronger completeness prompting, moderate generation budget
+increase, and context deduplication.
+Retrieval:
+`F1@5=0.6122`, `P@5=0.4796`, `R@5=0.9611`, `Retrieval Score=0.6843`
+Generation with `api-mistral-small-3.2-2506`:
+`Correctness=1.0000`, `Faithfulness=1.0000`, `Completeness=4.4667/5`,
+`Partial Generation Score=0.9644`
+Average:
+`0.8244`
 
 ## Submission Checklist
 

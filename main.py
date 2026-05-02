@@ -17,12 +17,13 @@ CHUNK_SIZE_WORDS = int(os.environ.get("RAG_CHUNK_SIZE_WORDS", "160"))
 CHUNK_OVERLAP_LINES = int(os.environ.get("RAG_CHUNK_OVERLAP_LINES", "2"))
 BM25_K1 = 1.5
 BM25_B = 0.75
-CONTEXT_TOKEN_BUDGET = 1700
+TOTAL_LLM_PROMPT_BUDGET = int(os.environ.get("RAG_TOTAL_LLM_PROMPT_BUDGET", "2000"))
+PROMPT_BUDGET_SAFETY_MARGIN = int(os.environ.get("RAG_PROMPT_BUDGET_SAFETY_MARGIN", "64"))
 TOKEN_ENCODING_NAME = "cl100k_base"
 TOKEN_FALLBACK_RATIO = 1.3
 DEFAULT_TRITONAI_BASE_URL = "https://tritonai-api.ucsd.edu/v1"
 DEFAULT_API_KEY_PATH = Path.home() / "api-key.txt"
-GENERATION_MAX_TOKENS = 400
+GENERATION_MAX_TOKENS = int(os.environ.get("RAG_GENERATION_MAX_TOKENS", "550"))
 HEADING_BOOST = float(os.environ.get("RAG_HEADING_BOOST", "0.25"))
 FILENAME_BOOST = float(os.environ.get("RAG_FILENAME_BOOST", "1.0"))
 FINAL_TOP_K = int(os.environ.get("RAG_FINAL_TOP_K", "4"))
@@ -34,6 +35,8 @@ RERANK_CANDIDATES = int(os.environ.get("RAG_RERANK_CANDIDATES", "8"))
 RERANK_MODEL = os.environ.get("RAG_RERANK_MODEL", "api-mistral-small-3.2-2506").strip()
 RERANK_MAX_CHARS = int(os.environ.get("RAG_RERANK_MAX_CHARS", "1000"))
 EMBEDDING_CACHE_PATH = Path(os.environ.get("RAG_EMBEDDING_CACHE_PATH", ".embedding_cache_api_tgpt.json"))
+MAX_SAME_FILE_CHUNKS = int(os.environ.get("RAG_MAX_SAME_FILE_CHUNKS", "2"))
+MAX_OVERLAP_LINES = int(os.environ.get("RAG_MAX_OVERLAP_LINES", "6"))
 
 EMBEDDING_CACHE = None
 EMBEDDING_DIRTY = False
@@ -387,19 +390,51 @@ def render_context_chunk(item):
     return f"[SOURCE: {item['file']} lines {item['start_line']}-{item['end_line']}]\n{item['text']}"
 
 
-def build_context(retrieved):
+def chunks_overlap_too_much(chunk_a, chunk_b):
+    if chunk_a["file"] != chunk_b["file"]:
+        return False
+    overlap_start = max(chunk_a["start_line"], chunk_b["start_line"])
+    overlap_end = min(chunk_a["end_line"], chunk_b["end_line"])
+    return overlap_end >= overlap_start and (overlap_end - overlap_start + 1) > MAX_OVERLAP_LINES
+
+
+def select_context_chunks(retrieved):
+    selected = []
+    per_file_counts = Counter()
+
+    for chunk in retrieved:
+        if per_file_counts[chunk["file"]] >= MAX_SAME_FILE_CHUNKS:
+            continue
+        if any(chunks_overlap_too_much(chunk, kept) for kept in selected):
+            continue
+        selected.append(chunk)
+        per_file_counts[chunk["file"]] += 1
+
+    return selected if selected else retrieved
+
+
+def prompt_overhead_tokens(question: str):
+    messages = build_generation_messages(question, "")
+    return sum(count_tokens(message["content"]) for message in messages)
+
+
+def build_context(question: str, retrieved):
     context_parts = []
     used_chunks = []
     total_tokens = 0
+    available_context_budget = max(
+        0,
+        TOTAL_LLM_PROMPT_BUDGET - prompt_overhead_tokens(question) - PROMPT_BUDGET_SAFETY_MARGIN,
+    )
 
-    for item in retrieved:
+    for item in select_context_chunks(retrieved):
         rendered = render_context_chunk(item)
         rendered_tokens = count_tokens(rendered)
         separator_tokens = 2 if context_parts else 0
 
-        if context_parts and total_tokens + separator_tokens + rendered_tokens > CONTEXT_TOKEN_BUDGET:
+        if context_parts and total_tokens + separator_tokens + rendered_tokens > available_context_budget:
             break
-        if not context_parts and rendered_tokens > CONTEXT_TOKEN_BUDGET:
+        if not context_parts and rendered_tokens > available_context_budget:
             continue
 
         context_parts.append(rendered)
@@ -435,12 +470,16 @@ def build_generation_messages(question: str, context: str):
     system_prompt = (
         "You are answering questions about RapidFire AI documentation. "
         "Use only the provided retrieved context. "
+        "Give the most complete answer supported by the context. "
+        "If the context includes names, defaults, constraints, supported options, or steps, include them explicitly. "
         "If the context does not contain enough information, say so briefly instead of guessing."
     )
     user_prompt = (
         f"Retrieved context:\n{context}\n\n"
         f"Question: {question}\n\n"
-        "Write a concise answer grounded only in the retrieved context."
+        "Write a concise but complete answer grounded only in the retrieved context. "
+        "Prefer exact terminology from the docs when available. "
+        "If multiple details are asked for, answer all of them."
     )
     return [
         {"role": "system", "content": system_prompt},
@@ -479,7 +518,7 @@ def run_pipeline(input_file: str, output_file: str):
     outputs = []
     for item in questions:
         retrieved = retrieve(item["question"], chunks, stats, top_k=FINAL_TOP_K)
-        context, used_chunks, _ = build_context(retrieved)
+        context, used_chunks, _ = build_context(item["question"], retrieved)
         answer = generate_answer(item["question"], context)
         sources = [
             {"file": r["file"], "lines": [r["start_line"], r["end_line"]]}
