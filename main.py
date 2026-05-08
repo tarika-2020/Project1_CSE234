@@ -12,7 +12,7 @@ from openai import OpenAI
 
 
 DOCS_DIR = Path("sourcedocs")
-MODEL_NAME = "gpt-4o-mini"
+MODEL_NAME = "api-mistral-small-3.2-2506"
 CHUNK_SIZE_WORDS = int(os.environ.get("RAG_CHUNK_SIZE_WORDS", "160"))
 CHUNK_OVERLAP_LINES = int(os.environ.get("RAG_CHUNK_OVERLAP_LINES", "2"))
 BM25_K1 = 1.5

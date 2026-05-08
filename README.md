@@ -50,7 +50,8 @@ judge workflows:
 - `JUDGE_BASE_URL`: optional for the released judge script
 - `JUDGE_MODEL`: optional override for the released judge script; default to
   `claude-sonnet-4-6-aws`, with `api-gpt-oss-120b` as a fallback if needed
-- `RAG_MODEL`: optional override for the generator model in `main.py`
+- `RAG_MODEL`: optional override for the generator model in `main.py`; current
+  default is `api-mistral-small-3.2-2506`
 - `RAG_FINAL_TOP_K`: optional number of chunks kept after ranking/reranking
 - `RAG_CHUNK_SIZE_WORDS`: optional chunk size override
 - `RAG_CHUNK_OVERLAP_LINES`: optional chunk overlap override
@@ -90,7 +91,10 @@ python main.py --input input_filename.json --output output_filename.json
 
 If TritonAI generation is enabled, `OPENAI_API_KEY` must be set or the API key
 must be present in `~/api-key.txt`. The script uses the course TritonAI base URL
-by default, so no extra base URL argument is needed for `main.py`.
+by default, so no extra base URL argument is needed for `main.py`. The checked-in
+default generator is `api-mistral-small-3.2-2506` because the TA team reported
+that `gpt-4o-mini` can fail with TritonAI `401 team_model_access_denied` under
+instructional access.
 
 The input file must be a JSON list of objects with:
 
