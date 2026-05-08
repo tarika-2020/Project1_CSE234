@@ -7,7 +7,7 @@ corpus.
 ## Repository Layout
 
 - `main.py`: submission entrypoint. The TAs should be able to run it as
-  `python main.py --input <input.json> --output <output.json>`.
+  `python main.py --input <input.json> --output <output.json> --corpus-dir <path> --apikey-txt <path> --generation-model <name>`.
 - `sourcedocs/`: the documentation corpus for retrieval. This is the canonical
   corpus root for the project.
 - `Metrics/`: released evaluation utilities, including retrieval scoring and
@@ -42,10 +42,10 @@ Expected Python packages for the final system:
 - `openai`
 - `tiktoken`
 
-Expected environment variables for TritonAI or OpenAI-compatible generation and
+Optional environment variables for TritonAI or OpenAI-compatible generation and
 judge workflows:
 
-- `OPENAI_API_KEY`: required for TritonAI or OpenAI calls
+- `OPENAI_API_KEY`: optional override for TritonAI or OpenAI calls
 - `OPENAI_BASE_URL`: optional for the generator client; defaults to TritonAI
 - `JUDGE_BASE_URL`: optional for the released judge script
 - `JUDGE_MODEL`: optional override for the released judge script; default to
@@ -79,22 +79,28 @@ For the course TritonAI gateway, the base URL is expected to be:
 `https://tritonai-api.ucsd.edu/v1`
 
 On Datahub, `main.py` also supports the course convention of reading the API key
-from `~/api-key.txt` if `OPENAI_API_KEY` is not set.
+from `~/api-key.txt` if `OPENAI_API_KEY` is not set, but the autograder-facing
+path is the explicit `--apikey-txt` CLI flag.
 
 ## TA Run Instructions
 
 The TAs should be able to run the full pipeline end to end as:
 
 ```bash
-python main.py --input input_filename.json --output output_filename.json
+python main.py \
+  --input input_filename.json \
+  --output output_filename.json \
+  --corpus-dir sourcedocs \
+  --apikey-txt /path/to/api-key.txt \
+  --generation-model api-mistral-small-3.2-2506
 ```
 
-If TritonAI generation is enabled, `OPENAI_API_KEY` must be set or the API key
-must be present in `~/api-key.txt`. The script uses the course TritonAI base URL
-by default, so no extra base URL argument is needed for `main.py`. The checked-in
+The script accepts all five required CLI flags from the course autograder
+guideline and does not require any environment variable to be set. The checked-in
 default generator is `api-mistral-small-3.2-2506` because the TA team reported
 that `gpt-4o-mini` can fail with TritonAI `401 team_model_access_denied` under
-instructional access.
+instructional access. The script uses the course TritonAI base URL by default,
+so no extra base URL argument is needed for `main.py`.
 
 The input file must be a JSON list of objects with:
 
@@ -113,13 +119,19 @@ The output file will be a JSON list of objects with:
 Example command:
 
 ```bash
-python main.py --input validation-set-golden-qa-pairs.json --output validation-output.json
+python main.py \
+  --input validation-set-golden-qa-pairs.json \
+  --output validation-output.json \
+  --corpus-dir sourcedocs \
+  --apikey-txt ~/api-key.txt \
+  --generation-model api-mistral-small-3.2-2506
 ```
 
 This command can be run from an SSH session on Datahub. SSH itself is not part
 of the Python pipeline, but the code is configured to work cleanly in that
-environment by defaulting to the TritonAI endpoint and by reading `~/api-key.txt`
-when available.
+environment by defaulting to the TritonAI endpoint. The `--apikey-txt` flag is
+the recommended way to provide the TritonAI key for both local and autograder
+runs.
 
 The current default tuned configuration in `main.py` is:
 

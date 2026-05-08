@@ -38,6 +38,13 @@ EMBEDDING_CACHE_PATH = Path(os.environ.get("RAG_EMBEDDING_CACHE_PATH", ".embeddi
 MAX_SAME_FILE_CHUNKS = int(os.environ.get("RAG_MAX_SAME_FILE_CHUNKS", "2"))
 MAX_OVERLAP_LINES = int(os.environ.get("RAG_MAX_OVERLAP_LINES", "6"))
 
+RUNTIME_CONFIG = {
+    "corpus_dir": DOCS_DIR,
+    "api_key_path": DEFAULT_API_KEY_PATH,
+    "generation_model": MODEL_NAME,
+    "base_url": os.environ.get("OPENAI_BASE_URL", DEFAULT_TRITONAI_BASE_URL).strip(),
+}
+
 EMBEDDING_CACHE = None
 EMBEDDING_DIRTY = False
 
@@ -50,6 +57,12 @@ except Exception:
 
 def tokenize(text: str):
     return re.findall(r"[a-z0-9_]+", text.lower())
+
+
+def configure_runtime(corpus_dir: str, api_key_txt: str, generation_model: str):
+    RUNTIME_CONFIG["corpus_dir"] = Path(corpus_dir)
+    RUNTIME_CONFIG["api_key_path"] = Path(api_key_txt)
+    RUNTIME_CONFIG["generation_model"] = generation_model.strip() or MODEL_NAME
 
 
 def load_embedding_cache():
@@ -138,7 +151,7 @@ def reciprocal_rank_fusion(ranks, k: int = 60):
 
 def load_documents(folder: Path):
     docs = []
-    for file in folder.rglob("*.rst"):
+    for file in sorted(folder.rglob("*.rst")):
         try:
             text = file.read_text(encoding="utf-8")
         except OSError:
@@ -449,9 +462,10 @@ def load_api_key():
     if env_key:
         return env_key.strip()
 
-    if DEFAULT_API_KEY_PATH.exists():
+    api_key_path = RUNTIME_CONFIG["api_key_path"]
+    if api_key_path.exists():
         try:
-            return DEFAULT_API_KEY_PATH.read_text(encoding="utf-8").strip()
+            return api_key_path.read_text(encoding="utf-8").strip()
         except OSError:
             return None
 
@@ -461,8 +475,8 @@ def load_api_key():
 def get_generator_config():
     return {
         "api_key": load_api_key(),
-        "base_url": os.environ.get("OPENAI_BASE_URL", DEFAULT_TRITONAI_BASE_URL).strip(),
-        "model": os.environ.get("RAG_MODEL", MODEL_NAME).strip(),
+        "base_url": RUNTIME_CONFIG["base_url"],
+        "model": RUNTIME_CONFIG["generation_model"],
     }
 
 
@@ -507,7 +521,7 @@ def generate_answer(question: str, context: str):
 
 
 def run_pipeline(input_file: str, output_file: str):
-    docs = load_documents(DOCS_DIR)
+    docs = load_documents(RUNTIME_CONFIG["corpus_dir"])
     chunks = prepare_chunks(docs)
     attach_embeddings(chunks)
     stats = build_retrieval_stats(chunks)
@@ -540,7 +554,23 @@ def run_pipeline(input_file: str, output_file: str):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", required=True)
-    parser.add_argument("--output", required=True)
+    parser.add_argument("--input", required=True, help="Path to the input JSON file.")
+    parser.add_argument("--output", required=True, help="Path to the output predictions JSON file.")
+    parser.add_argument(
+        "--corpus-dir",
+        default=str(DOCS_DIR),
+        help="Root directory of the .rst documentation corpus.",
+    )
+    parser.add_argument(
+        "--apikey-txt",
+        default=str(DEFAULT_API_KEY_PATH),
+        help="Path to a text file containing the TritonAI gateway API key.",
+    )
+    parser.add_argument(
+        "--generation-model",
+        default=MODEL_NAME,
+        help="Gateway model id used for answer generation.",
+    )
     args = parser.parse_args()
+    configure_runtime(args.corpus_dir, args.apikey_txt, args.generation_model)
     run_pipeline(args.input, args.output)
