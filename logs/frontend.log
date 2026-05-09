@@ -1,0 +1,18 @@
+ * Serving Flask app 'server'
+ * Debug mode: off
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:8853
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:werkzeug:127.0.0.1 - - [08/May/2026 15:35:13] "GET / HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [08/May/2026 15:35:13] "GET /static-files/static/js/main.a744532d.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [08/May/2026 15:35:14] "GET /static-files/manifest.json HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [08/May/2026 15:35:14] "GET /static-files/static/css/main.702595df.css HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [08/May/2026 15:35:14] "GET /static-files/static/media/RapidFire_Square_Bug.27ceb48296314a4bc0d4.png HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [08/May/2026 15:35:14] "GET /static-files/static/js/3814.6a5b5ad4.chunk.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [08/May/2026 15:35:14] "GET /static-files/static/js/9528.67020d12.chunk.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [08/May/2026 15:35:14] "GET /static-files/static/css/5536.018a23c8.chunk.css HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [08/May/2026 15:35:14] "GET /static-files/static/js/5536.e86212cb.chunk.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [08/May/2026 15:35:14] "GET /static-files/static/js/600.6c0a1461.chunk.js HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [08/May/2026 15:35:15] "GET /static-files/favicon.ico HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [08/May/2026 15:35:15] "GET /ajax-api/2.0/mlflow/experiments/search?max_results=25&order_by=last_update_time+DESC HTTP/1.1" 200 -
+INFO:werkzeug:127.0.0.1 - - [08/May/2026 15:35:20] "GET /ajax-api/2.0/mlflow/experiments/search?max_results=25&order_by=last_update_time+DESC HTTP/1.1" 200 -

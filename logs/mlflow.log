@@ -1,0 +1,104 @@
+Registry store URI not provided. Using backend store URI.
+2026/05/08 15:33:17 INFO mlflow.store.db.utils: Creating initial MLflow database tables...
+2026/05/08 15:33:17 INFO mlflow.store.db.utils: Updating database tables
+[MLflow] Security middleware enabled with default settings (localhost-only). To allow connections from other hosts, use --host 0.0.0.0 and configure --allowed-hosts and --cors-allowed-origins.
+2026/05/08 15:33:19 INFO:     Uvicorn running on http://127.0.0.1:8852 (Press CTRL+C to quit)
+2026/05/08 15:33:19 INFO:     Started parent process [3462]
+2026/05/08 15:33:25 INFO:     Started server process [3468]
+2026/05/08 15:33:25 INFO:     Waiting for application startup.
+2026/05/08 15:33:25 INFO:     Application startup complete.
+2026/05/08 15:33:25 INFO:     Started server process [3467]
+2026/05/08 15:33:25 INFO:     Waiting for application startup.
+2026/05/08 15:33:25 INFO:     Application startup complete.
+2026/05/08 15:33:25 INFO:     Started server process [3466]
+2026/05/08 15:33:25 INFO:     Waiting for application startup.
+2026/05/08 15:33:25 INFO:     Application startup complete.
+2026/05/08 15:33:25 INFO:     Started server process [3465]
+2026/05/08 15:33:25 INFO:     Waiting for application startup.
+2026/05/08 15:33:25 INFO:     Application startup complete.
+2026/05/08 15:33:32 INFO mlflow.server.jobs.utils: Registered online_scoring_scheduler periodic task (runs every 1 minute)
+2026/05/08 15:35:15 INFO:     127.0.0.1:39936 - "GET /ajax-api/2.0/mlflow/experiments/search?max_results=25&order_by=last_update_time+DESC HTTP/1.1" 200 OK
+2026/05/08 15:35:20 INFO:     127.0.0.1:38202 - "GET /ajax-api/2.0/mlflow/experiments/search?max_results=25&order_by=last_update_time+DESC HTTP/1.1" 200 OK
+2026/05/08 15:40:19 INFO:     127.0.0.1:55400 - "GET /api/2.0/mlflow/experiments/get-by-name?experiment_name=project1-rag-config-sweep HTTP/1.1" 404 Not Found
+2026/05/08 15:40:19 INFO:     127.0.0.1:55400 - "POST /api/2.0/mlflow/experiments/create HTTP/1.1" 200 OK
+2026/05/08 15:40:19 INFO:     127.0.0.1:55400 - "GET /api/2.0/mlflow/experiments/get?experiment_id=1 HTTP/1.1" 200 OK
+2026/05/08 15:40:19 INFO:     127.0.0.1:55400 - "POST /api/2.0/mlflow/runs/create HTTP/1.1" 200 OK
+2026/05/08 15:40:19 INFO:     127.0.0.1:55400 - "POST /api/2.0/mlflow/runs/log-batch HTTP/1.1" 200 OK
+2026/05/08 15:40:19 INFO:     127.0.0.1:55400 - "POST /api/2.0/mlflow/runs/log-parameter HTTP/1.1" 200 OK
+2026/05/08 15:40:19 INFO:     127.0.0.1:55400 - "POST /api/2.0/mlflow/runs/log-parameter HTTP/1.1" 200 OK
+2026/05/08 15:40:19 INFO:     127.0.0.1:55400 - "POST /api/2.0/mlflow/runs/log-batch HTTP/1.1" 200 OK
+2026/05/08 15:40:19 INFO:     127.0.0.1:55400 - "GET /api/2.0/mlflow/runs/get?run_uuid=1073262966e5415a973b94ae9eb836bd&run_id=1073262966e5415a973b94ae9eb836bd HTTP/1.1" 200 OK
+2026/05/08 15:40:19 INFO:     127.0.0.1:55400 - "PUT /api/2.0/mlflow-artifacts/artifacts/1/1073262966e5415a973b94ae9eb836bd/artifacts/final_default_160_top4.json HTTP/1.1" 200 OK
+2026/05/08 15:40:19 INFO:     127.0.0.1:55400 - "GET /api/2.0/mlflow/runs/get?run_uuid=1073262966e5415a973b94ae9eb836bd&run_id=1073262966e5415a973b94ae9eb836bd HTTP/1.1" 200 OK
+2026/05/08 15:40:19 INFO:     127.0.0.1:55400 - "POST /api/2.0/mlflow/runs/update HTTP/1.1" 200 OK
+2026/05/08 15:40:20 INFO:     127.0.0.1:44190 - "GET /api/3.0/mlflow/server-info HTTP/1.1" 200 OK
+2026/05/08 15:40:45 INFO:     127.0.0.1:59016 - "GET /api/2.0/mlflow/experiments/get-by-name?experiment_name=project1-rag-config-sweep HTTP/1.1" 200 OK
+2026/05/08 15:40:45 INFO:     127.0.0.1:59016 - "POST /api/2.0/mlflow/runs/create HTTP/1.1" 200 OK
+2026/05/08 15:40:45 INFO:     127.0.0.1:59016 - "POST /api/2.0/mlflow/runs/log-batch HTTP/1.1" 200 OK
+2026/05/08 15:40:45 INFO:     127.0.0.1:59016 - "POST /api/2.0/mlflow/runs/log-parameter HTTP/1.1" 200 OK
+2026/05/08 15:40:45 INFO:     127.0.0.1:59016 - "POST /api/2.0/mlflow/runs/log-parameter HTTP/1.1" 200 OK
+2026/05/08 15:40:45 INFO:     127.0.0.1:59016 - "POST /api/2.0/mlflow/runs/log-batch HTTP/1.1" 200 OK
+2026/05/08 15:40:45 INFO:     127.0.0.1:59016 - "GET /api/2.0/mlflow/runs/get?run_uuid=bef5807b986c4b299cd9afc21d594905&run_id=bef5807b986c4b299cd9afc21d594905 HTTP/1.1" 200 OK
+2026/05/08 15:40:45 INFO:     127.0.0.1:59016 - "PUT /api/2.0/mlflow-artifacts/artifacts/1/bef5807b986c4b299cd9afc21d594905/artifacts/smaller_chunks_120_top4.json HTTP/1.1" 200 OK
+2026/05/08 15:40:45 INFO:     127.0.0.1:59016 - "GET /api/2.0/mlflow/runs/get?run_uuid=bef5807b986c4b299cd9afc21d594905&run_id=bef5807b986c4b299cd9afc21d594905 HTTP/1.1" 200 OK
+2026/05/08 15:40:45 INFO:     127.0.0.1:59016 - "POST /api/2.0/mlflow/runs/update HTTP/1.1" 200 OK
+2026/05/08 15:41:12 INFO:     127.0.0.1:57268 - "GET /api/2.0/mlflow/experiments/get-by-name?experiment_name=project1-rag-config-sweep HTTP/1.1" 200 OK
+2026/05/08 15:41:12 INFO:     127.0.0.1:57268 - "POST /api/2.0/mlflow/runs/create HTTP/1.1" 200 OK
+2026/05/08 15:41:12 INFO:     127.0.0.1:57268 - "POST /api/2.0/mlflow/runs/log-batch HTTP/1.1" 200 OK
+2026/05/08 15:41:12 INFO:     127.0.0.1:57268 - "POST /api/2.0/mlflow/runs/log-parameter HTTP/1.1" 200 OK
+2026/05/08 15:41:12 INFO:     127.0.0.1:57268 - "POST /api/2.0/mlflow/runs/log-parameter HTTP/1.1" 200 OK
+2026/05/08 15:41:12 INFO:     127.0.0.1:57268 - "POST /api/2.0/mlflow/runs/log-batch HTTP/1.1" 200 OK
+2026/05/08 15:41:12 INFO:     127.0.0.1:57268 - "GET /api/2.0/mlflow/runs/get?run_uuid=7ed9c69ec01b453f8190b49ea3c4841e&run_id=7ed9c69ec01b453f8190b49ea3c4841e HTTP/1.1" 200 OK
+2026/05/08 15:41:12 INFO:     127.0.0.1:57268 - "PUT /api/2.0/mlflow-artifacts/artifacts/1/7ed9c69ec01b453f8190b49ea3c4841e/artifacts/larger_chunks_220_top4.json HTTP/1.1" 200 OK
+2026/05/08 15:41:12 INFO:     127.0.0.1:57268 - "GET /api/2.0/mlflow/runs/get?run_uuid=7ed9c69ec01b453f8190b49ea3c4841e&run_id=7ed9c69ec01b453f8190b49ea3c4841e HTTP/1.1" 200 OK
+2026/05/08 15:41:12 INFO:     127.0.0.1:57268 - "POST /api/2.0/mlflow/runs/update HTTP/1.1" 200 OK
+2026/05/08 15:41:34 INFO:     127.0.0.1:60090 - "GET /api/2.0/mlflow/experiments/get-by-name?experiment_name=project1-rag-config-sweep HTTP/1.1" 200 OK
+2026/05/08 15:41:34 INFO:     127.0.0.1:60090 - "POST /api/2.0/mlflow/runs/create HTTP/1.1" 200 OK
+2026/05/08 15:41:34 INFO:     127.0.0.1:60090 - "POST /api/2.0/mlflow/runs/log-batch HTTP/1.1" 200 OK
+2026/05/08 15:41:34 INFO:     127.0.0.1:60090 - "POST /api/2.0/mlflow/runs/log-parameter HTTP/1.1" 200 OK
+2026/05/08 15:41:34 INFO:     127.0.0.1:60090 - "POST /api/2.0/mlflow/runs/log-parameter HTTP/1.1" 200 OK
+2026/05/08 15:41:34 INFO:     127.0.0.1:60090 - "POST /api/2.0/mlflow/runs/log-batch HTTP/1.1" 200 OK
+2026/05/08 15:41:34 INFO:     127.0.0.1:60090 - "GET /api/2.0/mlflow/runs/get?run_uuid=d74cbbd1c59c4dd1a31eee6fd03b4d5e&run_id=d74cbbd1c59c4dd1a31eee6fd03b4d5e HTTP/1.1" 200 OK
+2026/05/08 15:41:34 INFO:     127.0.0.1:60090 - "PUT /api/2.0/mlflow-artifacts/artifacts/1/d74cbbd1c59c4dd1a31eee6fd03b4d5e/artifacts/final_top3.json HTTP/1.1" 200 OK
+2026/05/08 15:41:34 INFO:     127.0.0.1:60090 - "GET /api/2.0/mlflow/runs/get?run_uuid=d74cbbd1c59c4dd1a31eee6fd03b4d5e&run_id=d74cbbd1c59c4dd1a31eee6fd03b4d5e HTTP/1.1" 200 OK
+2026/05/08 15:41:34 INFO:     127.0.0.1:60090 - "POST /api/2.0/mlflow/runs/update HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "GET /api/2.0/mlflow/experiments/get-by-name?experiment_name=project1-rag-config-sweep HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "POST /api/2.0/mlflow/runs/create HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "POST /api/2.0/mlflow/runs/log-batch HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "POST /api/2.0/mlflow/runs/log-parameter HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "POST /api/2.0/mlflow/runs/log-parameter HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "POST /api/2.0/mlflow/runs/log-batch HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "GET /api/2.0/mlflow/runs/get?run_uuid=c05e3f9d4cda4279b54acb520b8e1201&run_id=c05e3f9d4cda4279b54acb520b8e1201 HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "PUT /api/2.0/mlflow-artifacts/artifacts/1/c05e3f9d4cda4279b54acb520b8e1201/artifacts/final_top5.json HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "GET /api/2.0/mlflow/runs/get?run_uuid=c05e3f9d4cda4279b54acb520b8e1201&run_id=c05e3f9d4cda4279b54acb520b8e1201 HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "POST /api/2.0/mlflow/runs/update HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "GET /api/2.0/mlflow/experiments/get-by-name?experiment_name=project1-rag-config-sweep HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "POST /api/2.0/mlflow/runs/create HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "POST /api/2.0/mlflow/runs/log-batch HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "POST /api/2.0/mlflow/runs/log-parameter HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "POST /api/2.0/mlflow/runs/log-parameter HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "POST /api/2.0/mlflow/runs/log-batch HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "GET /api/2.0/mlflow/runs/get?run_uuid=2fd6f89952d448beb48a587b8f3df5f9&run_id=2fd6f89952d448beb48a587b8f3df5f9 HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "PUT /api/2.0/mlflow-artifacts/artifacts/1/2fd6f89952d448beb48a587b8f3df5f9/artifacts/lexical_only_top4.json HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "GET /api/2.0/mlflow/runs/get?run_uuid=2fd6f89952d448beb48a587b8f3df5f9&run_id=2fd6f89952d448beb48a587b8f3df5f9 HTTP/1.1" 200 OK
+2026/05/08 15:41:56 INFO:     127.0.0.1:44630 - "POST /api/2.0/mlflow/runs/update HTTP/1.1" 200 OK
+2026/05/08 15:41:58 INFO:     127.0.0.1:44630 - "GET /api/2.0/mlflow/experiments/get-by-name?experiment_name=project1-rag-config-sweep HTTP/1.1" 200 OK
+2026/05/08 15:41:58 INFO:     127.0.0.1:44630 - "POST /api/2.0/mlflow/runs/create HTTP/1.1" 200 OK
+2026/05/08 15:41:58 INFO:     127.0.0.1:44630 - "POST /api/2.0/mlflow/runs/log-batch HTTP/1.1" 200 OK
+2026/05/08 15:41:58 INFO:     127.0.0.1:44630 - "POST /api/2.0/mlflow/runs/log-parameter HTTP/1.1" 200 OK
+2026/05/08 15:41:58 INFO:     127.0.0.1:44630 - "POST /api/2.0/mlflow/runs/log-parameter HTTP/1.1" 200 OK
+2026/05/08 15:41:58 INFO:     127.0.0.1:44630 - "POST /api/2.0/mlflow/runs/log-batch HTTP/1.1" 200 OK
+2026/05/08 15:41:58 INFO:     127.0.0.1:44630 - "GET /api/2.0/mlflow/runs/get?run_uuid=94d2a53a818c481b8050cec27c092c5f&run_id=94d2a53a818c481b8050cec27c092c5f HTTP/1.1" 200 OK
+2026/05/08 15:41:58 INFO:     127.0.0.1:44630 - "PUT /api/2.0/mlflow-artifacts/artifacts/1/94d2a53a818c481b8050cec27c092c5f/artifacts/hybrid_no_reranker_top4.json HTTP/1.1" 200 OK
+2026/05/08 15:41:58 INFO:     127.0.0.1:44630 - "GET /api/2.0/mlflow/runs/get?run_uuid=94d2a53a818c481b8050cec27c092c5f&run_id=94d2a53a818c481b8050cec27c092c5f HTTP/1.1" 200 OK
+2026/05/08 15:41:58 INFO:     127.0.0.1:44630 - "POST /api/2.0/mlflow/runs/update HTTP/1.1" 200 OK
+2026/05/08 15:42:31 INFO:     127.0.0.1:34430 - "GET /api/2.0/mlflow/experiments/get-by-name?experiment_name=project1-rag-config-sweep HTTP/1.1" 200 OK
+2026/05/08 15:42:31 INFO:     127.0.0.1:34430 - "POST /api/2.0/mlflow/runs/create HTTP/1.1" 200 OK
+2026/05/08 15:42:31 INFO:     127.0.0.1:34430 - "POST /api/2.0/mlflow/runs/log-batch HTTP/1.1" 200 OK
+2026/05/08 15:42:31 INFO:     127.0.0.1:34430 - "POST /api/2.0/mlflow/runs/log-parameter HTTP/1.1" 200 OK
+2026/05/08 15:42:31 INFO:     127.0.0.1:34430 - "POST /api/2.0/mlflow/runs/log-parameter HTTP/1.1" 200 OK
+2026/05/08 15:42:31 INFO:     127.0.0.1:34430 - "POST /api/2.0/mlflow/runs/log-batch HTTP/1.1" 200 OK
+2026/05/08 15:42:31 INFO:     127.0.0.1:34430 - "GET /api/2.0/mlflow/runs/get?run_uuid=338b9a935e364e498f02a673155b63f7&run_id=338b9a935e364e498f02a673155b63f7 HTTP/1.1" 200 OK
+2026/05/08 15:42:31 INFO:     127.0.0.1:34430 - "PUT /api/2.0/mlflow-artifacts/artifacts/1/338b9a935e364e498f02a673155b63f7/artifacts/broader_candidates_top4.json HTTP/1.1" 200 OK
+2026/05/08 15:42:31 INFO:     127.0.0.1:34430 - "GET /api/2.0/mlflow/runs/get?run_uuid=338b9a935e364e498f02a673155b63f7&run_id=338b9a935e364e498f02a673155b63f7 HTTP/1.1" 200 OK
+2026/05/08 15:42:31 INFO:     127.0.0.1:34430 - "POST /api/2.0/mlflow/runs/update HTTP/1.1" 200 OK

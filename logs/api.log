@@ -1,0 +1,7 @@
+INFO 05-08 15:33:45 [importing.py:44] Triton is installed but 0 active driver(s) found (expected 1). Disabling Triton to prevent runtime errors.
+INFO 05-08 15:33:45 [importing.py:68] Triton not installed or not compatible; certain GPU-related functions will not be available.
+[2026-05-08 15:33:48 -0700] [3836] [INFO] Starting gunicorn 25.3.0
+[2026-05-08 15:33:48 -0700] [3836] [INFO] Listening at: http://127.0.0.1:8851 (3836)
+[2026-05-08 15:33:48 -0700] [3836] [INFO] Using worker: sync
+[2026-05-08 15:33:48 -0700] [4843] [INFO] Booting worker with pid: 4843
+[2026-05-08 15:33:48 -0700] [3836] [INFO] Control socket listening at /home/t3gupta/.gunicorn/gunicorn.ctl
